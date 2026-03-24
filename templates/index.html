@@ -1,0 +1,12 @@
+<h2>Dub Style Link Shortener</h2>
+
+<form method="POST">
+<input name="url" placeholder="Paste link">
+<button>Shorten</button>
+</form>
+
+{% if short %}
+<p>Short: <a href="{{short}}">{{short}}</a></p>
+{% endif %}
+
+<a href="/dashboard">Dashboard</a>

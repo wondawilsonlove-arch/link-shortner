@@ -1,0 +1,26 @@
+<h2>Dashboard</h2>
+
+<table border="1">
+<tr><th>ID</th><th>Code</th><th>URL</th><th>Clicks</th><th>Edit</th><th>Delete</th></tr>
+
+{% for i in data %}
+<tr>
+<td>{{i[0]}}</td>
+<td>{{i[1]}}</td>
+<td>{{i[2]}}</td>
+<td>{{i[3]}}</td>
+
+<td>
+<form action="/edit/{{i[0]}}" method="post">
+<input name="url">
+<button>Update</button>
+</form>
+</td>
+
+<td><a href="/delete/{{i[0]}}">Delete</a></td>
+</tr>
+{% endfor %}
+
+</table>
+
+<a href="/">Back</a>

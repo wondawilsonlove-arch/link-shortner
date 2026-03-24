@@ -4,7 +4,7 @@ import string
 import random
 import os
 
-app = Flask(name)
+app = Flask(__name__)
 
 DB = "database.db"
 

@@ -76,15 +76,18 @@ def edit(id):
     return redirect("/dashboard")
 
 
-@app.route("/delete/<id>")
+# ---------- DELETE LINK ----------
+@app.route('/delete/<id>')
 def delete(id):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
-    c.execute("DELETE FROM links WHERE id=?",(id,))
+    c.execute("DELETE FROM links WHERE id=?", (id,))
     conn.commit()
     conn.close()
     return redirect("/dashboard")
 
 
-if __name__ == "__main__":
-    app.run()
+# 🚫 IMPORTANT:
+# नीचे कुछ भी नहीं लिखना है
+# NO app.run()
+# NO if name == "main"

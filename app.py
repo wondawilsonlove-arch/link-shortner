@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 DB = "database.db"
 
-# ---------- DB INIT ----------
+# ---------- INIT DB ----------
 def init_db():
     conn = sqlite3.connect(DB)
     c = conn.cursor()
@@ -30,72 +30,36 @@ def generate_code(length=6):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
-# ---------- UI HOME ----------
+# ---------- HOME UI ----------
 @app.route('/', methods=['GET', 'POST'])
 def home():
     short_url = None
 
     if request.method == 'POST':
-        original_url = request.form.get('url')
+        url = request.form.get('url')
         code = generate_code()
 
         conn = sqlite3.connect(DB)
         c = conn.cursor()
-        c.execute("INSERT INTO links (code, url) VALUES (?, ?)", (code, original_url))
+        c.execute("INSERT INTO links (code, url) VALUES (?, ?)", (code, url))
         conn.commit()
         conn.close()
 
         short_url = request.host_url + code
 
     return render_template_string("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Link Shortener</title>
-        <style>
-            body {
-                font-family: Arial;
-                text-align: center;
-                margin-top: 100px;
-                background: #f4f4f4;
-            }
-            input {
-                padding: 10px;
-                width: 300px;
-            }
-            button {
-                padding: 10px 20px;
-                background: black;
-                color: white;
-                border: none;
-                cursor: pointer;
-            }
-            .result {
-                margin-top: 20px;
-                font-size: 18px;
-                color: green;
-            }
-        </style>
-    </head>
-    <body>
+    <h2>Advanced Link Shortener</h2>
+    <form method="POST">
+        <input name="url" placeholder="Enter URL" required>
+        <button type="submit">Shorten</button>
+    </form>
 
-        <h2>🔗 Simple Link Shortener</h2>
+    {% if short_url %}
+    <p>Short URL: <a href="{{ short_url }}">{{ short_url }}</a></p>
+    {% endif %}
 
-        <form method="POST">
-            <input type="text" name="url" placeholder="Enter your link" required>
-            <br><br>
-            <button type="submit">Shorten</button>
-        </form>
-
-        {% if short_url %}
-            <div class="result">
-                Short Link: <br>
-                <a href="{{ short_url }}" target="_blank">{{ short_url }}</a>
-            </div>
-        {% endif %}
-
-    </body>
-    </html>
+    <br>
+    <a href="/dashboard">Dashboard</a>
     """)
 
 
@@ -104,18 +68,79 @@ def home():
 def redirect_url(code):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
-
     c.execute("SELECT url, clicks FROM links WHERE code=?", (code,))
-    result = c.fetchone()
+    data = c.fetchone()
 
-    if result:
-        url, clicks = result
-        c.execute("UPDATE links SET clicks=? WHERE code=?", (clicks + 1, code))
+    if data:
+        url, clicks = data
+        c.execute("UPDATE links SET clicks=? WHERE code=?", (clicks+1, code))
         conn.commit()
         conn.close()
         return redirect(url)
 
-    return "Link not found", 404
+    return "Not found", 404
+
+
+# ---------- DASHBOARD ----------
+@app.route('/dashboard')
+def dashboard():
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("SELECT code, url, clicks FROM links")
+    data = c.fetchall()
+    conn.close()
+
+    html = "<h2>Dashboard</h2><table border=1><tr><th>Code</th><th>URL</th><th>Clicks</th><th>Edit</th></tr>"
+
+    for row in data:
+        html += f"""
+        <tr>
+            <td>{row[0]}</td>
+            <td>{row[1]}</td>
+            <td>{row[2]}</td>
+            <td>
+                <form action="/edit/{row[0]}" method="post">
+                    <input name="url" placeholder="New URL">
+                    <button type="submit">Update</button>
+                </form>
+            </td>
+        </tr>
+        """
+
+    html += "</table><br><a href='/'>Back</a>"
+    return html
+
+
+# ---------- EDIT LINK ----------
+@app.route('/edit/<code>', methods=['POST'])
+def edit(code):
+    new_url = request.form.get("url")
+
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("UPDATE links SET url=? WHERE code=?", (new_url, code))
+    conn.commit()
+    conn.close()
+
+    return redirect("/dashboard")
+
+
+# ---------- API ----------
+@app.route('/api/shorten', methods=['POST'])
+def api_shorten():
+    data = request.json
+    url = data.get("url")
+    code = generate_code()
+
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("INSERT INTO links (code, url) VALUES (?, ?)", (code, url))
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "short_url": request.host_url + code
+    })
 
 
 # ---------- RUN ----------

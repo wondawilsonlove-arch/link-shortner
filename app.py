@@ -1,7 +1,7 @@
 from flask import Flask, request, redirect, render_template, jsonify
 import sqlite3, random, string
 
-app = Flask(name)
+app = Flask(__name__)
 DB = "db.sqlite3"
 
 def init():
@@ -86,5 +86,5 @@ def delete(id):
     return redirect("/dashboard")
 
 
-if name == "main":
+if __name__ == "__main__":
     app.run()
